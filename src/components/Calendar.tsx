@@ -17,20 +17,11 @@ import Dialog from './Dialog';
 import DialogRef from './types/DialogRef';
 import { v4 as uuidv4 } from 'uuid';
 
-export default function Calendar() {
-  const INITIAL_EVENTS: EventInput[] = [
-    // {
-    //  id: uuidv4(),
-    //   title: 'All-day event',
-    //   start: dateWithoutTime(new Date()),
-    // },
-    // {
-    //   id: uuidv4(),
-    //   title: 'Timed event',
-    //   start: dateWithoutTime(new Date()) + 'T12:00:00',
-    // },
-  ];
-
+export default function Calendar(props: {
+  initialEvents: EventInput[];
+  onEventAdd: (event: EventInput) => void;
+  onEventDelete: (eventId: string) => void;
+}) {
   const [currentEvents, setCurrentEvents] = useState<EventApi[]>([]);
   const [lastSelection, setLastSelection] = useState<DateSelectArg>();
   const [lastEventClick, setLastEventClick] = useState<EventClickArg>();
@@ -61,13 +52,17 @@ export default function Calendar() {
       calendarApi.unselect();
 
       if (newEventTitle) {
-        calendarApi.addEvent({
+        const newEvent = {
           id: uuidv4(),
           title: newEventTitle,
           start: lastSelection.startStr,
           end: lastSelection.endStr,
           allDay: lastSelection.allDay,
-        });
+        };
+        calendarApi.addEvent(newEvent);
+
+        setNewEventTitle('');
+        props.onEventAdd(newEvent);
       }
     }
   };
@@ -75,6 +70,7 @@ export default function Calendar() {
   const handleDeleteDialogClose = (accept: boolean) => {
     if (accept && lastEventClick) {
       lastEventClick.event.remove();
+      props.onEventDelete(lastEventClick.event.id);
     }
   };
 
@@ -115,7 +111,7 @@ export default function Calendar() {
         selectable={true}
         selectMirror={true}
         dayMaxEvents={true}
-        initialEvents={INITIAL_EVENTS}
+        initialEvents={props.initialEvents}
         select={handleDateSelect}
         eventContent={renderEventContent}
         eventClick={handleEventClick}

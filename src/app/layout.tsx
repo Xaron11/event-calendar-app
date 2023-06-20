@@ -16,9 +16,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <ClerkProvider>
       <html lang='en'>
-        <head>
-          <script src='https://cdn.onesignal.com/sdks/OneSignalSDK.js' defer={true}></script>
-        </head>
+        <Head>
+          <script src='https://cdn.onesignal.com/sdks/OneSignalSDK.js' async={true}></script>
+        </Head>
         <body className={inter.className}>{children}</body>
       </html>
     </ClerkProvider>

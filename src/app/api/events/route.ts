@@ -9,14 +9,6 @@ export async function GET(req: NextRequest) {
     where: {
       userId: user.userId!!,
     },
-    select: {
-      id: true,
-      title: true,
-      start: true,
-      end: true,
-      allDay: true,
-      userId: false,
-    },
   });
   return NextResponse.json(events);
 }
@@ -30,7 +22,6 @@ export async function POST(req: NextRequest) {
       userId: user.userId!!,
     },
   });
-  console.log(event);
   return NextResponse.json(event);
 }
 

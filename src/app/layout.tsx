@@ -1,7 +1,7 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
-import { TrpcProvider } from '@/utils/trpc-provider';
+import Head from 'next/head';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -14,12 +14,13 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <TrpcProvider>
-      <ClerkProvider>
-        <html lang='en'>
-          <body className={inter.className}>{children}</body>
-        </html>
-      </ClerkProvider>
-    </TrpcProvider>
+    <ClerkProvider>
+      <html lang='en'>
+        <head>
+          <script src='https://cdn.onesignal.com/sdks/OneSignalSDK.js' defer={true}></script>
+        </head>
+        <body className={inter.className}>{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }

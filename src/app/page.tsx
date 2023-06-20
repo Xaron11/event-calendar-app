@@ -4,14 +4,38 @@ import Calendar from '@/components/Calendar';
 import { EventInput } from '@fullcalendar/core';
 import styles from './page.module.css';
 import { UserButton, useUser } from '@clerk/nextjs';
-import { trpc } from '../utils/trpc';
+import axios from 'axios';
+import useSWR from 'swr';
+import { useEffect } from 'react';
+
+const fetcher = (url: string) =>
+  axios
+    .get(url)
+    .then((res) => res.data)
+    .catch((err) => console.log(err));
 
 export default function Home() {
   const user = useUser();
 
-  const eventsQuery = trpc.getEvents.useQuery();
-  const createEventMutation = trpc.createEvent.useMutation();
-  const deleteEventMutation = trpc.deleteEvent.useMutation();
+  const eventsQuery = useSWR('/api/events', fetcher);
+
+  useEffect(() => {
+    window.OneSignal = window.OneSignal || [];
+    OneSignal.push(function () {
+      OneSignal.init({
+        appId: 'a3e62844-430e-49c9-90fa-a6d7a30a9167',
+        safari_web_id: 'web.onesignal.auto.040fbea3-5bf4-4f81-a6ad-042d48246d00',
+        notifyButton: {
+          enable: true,
+        },
+        allowLocalhostAsSecureOrigin: true,
+      });
+    });
+
+    return () => {
+      window.OneSignal = undefined;
+    };
+  }, []);
 
   if (!user.user) {
     return <div>Unathorized</div>;
@@ -22,21 +46,21 @@ export default function Home() {
     return <div>Error loading events</div>;
   }
 
+  if (!eventsQuery.data) {
+    return <div>Loading...</div>;
+  }
+
   const handleEventAdd = async (event: EventInput) => {
     if (user.user) {
-      createEventMutation.mutate({
-        id: event.id!!,
-        title: event.title!!,
-        start: event.start?.toString()!!,
-        end: event.end?.toString()!!,
-        allDay: event.allDay!!,
+      await axios.post('/api/events', {
+        ...event,
       });
     }
   };
 
   const handleEventDelete = async (eventId: string) => {
     if (user.user) {
-      deleteEventMutation.mutate({ id: eventId });
+      await axios.delete(`/api/events?id=${eventId}`);
     }
   };
 

@@ -22,7 +22,7 @@ export default function Calendar(props: {
   onEventAdd: (event: EventInput) => void;
   onEventDelete: (eventId: string) => void;
 }) {
-  const [currentEvents, setCurrentEvents] = useState<EventApi[]>([]);
+  const [currentEvents, setCurrentEvents] = useState<EventApi[]>();
   const [lastSelection, setLastSelection] = useState<DateSelectArg>();
   const [lastEventClick, setLastEventClick] = useState<EventClickArg>();
   const [newEventTitle, setNewEventTitle] = useState<string>('');
@@ -78,7 +78,7 @@ export default function Calendar(props: {
     return (
       <>
         <div className='p-1'>
-          <b className='text-md'>{eventInfo.timeText}</b>{' '}
+          <b className='text-sm'>{eventInfo.timeText}</b>{' '}
           <i className='text-lg'>{eventInfo.event.title}</i>
         </div>
       </>
@@ -138,7 +138,7 @@ export default function Calendar(props: {
       <Dialog
         ref={deleteDialogRef}
         title='Delete Event'
-        desc={`Are you sure you want to delete the event '${lastEventClick?.event.title}`}
+        desc={`Are you sure you want to delete the event '${lastEventClick?.event.title}'`}
         onClose={handleDeleteDialogClose}
       ></Dialog>
     </>

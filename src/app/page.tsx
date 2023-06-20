@@ -7,6 +7,7 @@ import { UserButton, useUser } from '@clerk/nextjs';
 import axios from 'axios';
 import useSWR from 'swr';
 import { useEffect } from 'react';
+import OneSignal from 'react-onesignal';
 
 const fetcher = (url: string) =>
   axios
@@ -20,21 +21,15 @@ export default function Home() {
   const eventsQuery = useSWR('/api/events', fetcher);
 
   useEffect(() => {
-    window.OneSignal = window.OneSignal || [];
-    OneSignal.push(function () {
-      OneSignal.init({
-        appId: 'a3e62844-430e-49c9-90fa-a6d7a30a9167',
-        safari_web_id: 'web.onesignal.auto.040fbea3-5bf4-4f81-a6ad-042d48246d00',
-        notifyButton: {
-          enable: true,
-        },
-        allowLocalhostAsSecureOrigin: true,
-      });
+    OneSignal.init({
+      appId: 'a3e62844-430e-49c9-90fa-a6d7a30a9167',
+      safari_web_id: 'web.onesignal.auto.040fbea3-5bf4-4f81-a6ad-042d48246d00',
+      notifyButton: {
+        enable: true,
+      },
+      allowLocalhostAsSecureOrigin: true,
     });
-
-    return () => {
-      window.OneSignal = undefined;
-    };
+    OneSignal.setExternalUserId(user.user?.id);
   }, []);
 
   if (!user.user) {

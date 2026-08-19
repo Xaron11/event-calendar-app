@@ -6,6 +6,7 @@ import { UserButton, useUser } from '@clerk/nextjs';
 import axios from 'axios';
 import useSWR from 'swr';
 import { useEffect, useState } from 'react';
+import { useOneSignal } from '@/lib/onesignal';
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -17,41 +18,12 @@ export default function Home() {
     setMounted(true);
   }, []);
 
+  useOneSignal(mounted && isSignedIn ? user?.id : undefined);
+
   const eventsQuery = useSWR(
     mounted && isLoaded && isSignedIn ? '/api/events' : null,
     fetcher
   );
-
-  useEffect(() => {
-    if (mounted && typeof window !== 'undefined' && user?.id) {
-      import('react-onesignal')
-        .then((module) => {
-          const OneSignal = module.default;
-          OneSignal.init({
-            appId: 'a3e62844-430e-49c9-90fa-a6d7a30a9167',
-            safari_web_id: 'web.onesignal.auto.040fbea3-5bf4-4f81-a6ad-042d48246d00',
-            notifyButton: {
-              enable: true,
-            } as any,
-            allowLocalhostAsSecureOrigin: true,
-          })
-            .then(() => {
-              const os = OneSignal as any;
-              if (typeof os.login === 'function') {
-                os.login(user.id);
-              } else if (typeof os.setExternalUserId === 'function') {
-                os.setExternalUserId(user.id);
-              }
-            })
-            .catch((err) => {
-              console.warn('OneSignal init error:', err);
-            });
-        })
-        .catch((err) => {
-          console.warn('Failed to load react-onesignal:', err);
-        });
-    }
-  }, [mounted, user?.id]);
 
   if (!mounted || !isLoaded) {
     return (

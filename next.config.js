@@ -5,7 +5,7 @@ const nextConfig = {
     return [
       {
         source: '/__clerk/:path*',
-        destination: 'https://api.clerk.com/:path*',
+        destination: 'https://frontend-api.clerk.services/:path*',
       },
     ];
   },

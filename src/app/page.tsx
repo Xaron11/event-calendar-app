@@ -44,7 +44,7 @@ export default function Home() {
   if (eventsQuery.error) {
     console.error('Events query error:', eventsQuery.error);
     const errorMsg =
-      eventsQuery.error?.response?.data?.error || 'Error loading events from database';
+      eventsQuery.error?.response?.data?.error || 'Error loading events';
     return (
       <div className='flex flex-col items-center justify-center min-h-screen text-red-600 gap-2'>
         <p className='text-lg font-semibold'>Error Loading Events</p>
@@ -63,17 +63,25 @@ export default function Home() {
 
   const handleEventAdd = async (event: EventInput) => {
     if (user) {
-      await axios.post('/api/events', {
-        ...event,
-      });
-      eventsQuery.mutate();
+      try {
+        await axios.post('/api/events', {
+          ...event,
+        });
+        eventsQuery.mutate();
+      } catch (err) {
+        console.error('Failed to create event:', err);
+      }
     }
   };
 
   const handleEventDelete = async (eventId: string) => {
     if (user) {
-      await axios.delete(`/api/events?id=${eventId}`);
-      eventsQuery.mutate();
+      try {
+        await axios.delete(`/api/events?id=${encodeURIComponent(eventId)}`);
+        eventsQuery.mutate();
+      } catch (err) {
+        console.error('Failed to delete event:', err);
+      }
     }
   };
 

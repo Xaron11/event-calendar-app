@@ -1,8 +1,17 @@
 import prisma from '@/lib/prisma';
 import { NextResponse, NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { z } from 'zod';
 
-export async function GET(req: NextRequest) {
+const EventCreateSchema = z.object({
+  id: z.string().trim().min(1, 'ID cannot be empty').optional(),
+  title: z.string().trim().min(1, 'Title is required').max(200, 'Title is too long'),
+  start: z.string().trim().min(1, 'Start date is required'),
+  end: z.string().trim().min(1, 'End date is required'),
+  allDay: z.boolean(),
+});
+
+export async function GET() {
   const { userId } = await auth();
 
   if (!userId) {
@@ -16,10 +25,10 @@ export async function GET(req: NextRequest) {
       },
     });
     return NextResponse.json(events);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching events:', error);
     return NextResponse.json(
-      { error: error?.message || 'Failed to fetch events from database' },
+      { error: 'Failed to fetch events from database' },
       { status: 500 }
     );
   }
@@ -33,18 +42,33 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
+    const rawBody = await req.json();
+    const parseResult = EventCreateSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid input data', details: parseResult.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { id, title, start, end, allDay } = parseResult.data;
+
     const event = await prisma.event.create({
       data: {
-        ...body,
-        userId: userId,
+        id: id || crypto.randomUUID(),
+        title,
+        start,
+        end,
+        allDay,
+        userId,
       },
     });
     return NextResponse.json(event);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating event:', error);
     return NextResponse.json(
-      { error: error?.message || 'Failed to create event' },
+      { error: 'Failed to create event' },
       { status: 500 }
     );
   }
@@ -61,27 +85,29 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
-    if (!id) {
-      return NextResponse.json({ error: 'Missing event ID' }, { status: 400 });
+    if (!id || typeof id !== 'string' || id.trim() === '') {
+      return NextResponse.json({ error: 'Valid event ID is required' }, { status: 400 });
     }
 
-    const event = await prisma.event.deleteMany({
+    const result = await prisma.event.deleteMany({
       where: {
-        AND: [
-          {
-            id: id,
-          },
-          {
-            userId: userId,
-          },
-        ],
+        id: id.trim(),
+        userId: userId,
       },
     });
-    return NextResponse.json(event);
-  } catch (error: any) {
+
+    if (result.count === 0) {
+      return NextResponse.json(
+        { error: 'Event not found or unauthorized' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, count: result.count });
+  } catch (error: unknown) {
     console.error('Error deleting event:', error);
     return NextResponse.json(
-      { error: error?.message || 'Failed to delete event' },
+      { error: 'Failed to delete event' },
       { status: 500 }
     );
   }

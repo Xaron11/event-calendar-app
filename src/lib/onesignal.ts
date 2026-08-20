@@ -7,35 +7,50 @@ export function useOneSignal(userId?: string) {
     if (!userId || typeof window === 'undefined') return;
 
     let isMounted = true;
-    const appId =
-      process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ||
-      'a3e62844-430e-49c9-90fa-a6d7a30a9167';
+    const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+
+    // Do not attempt to initialize if OneSignal App ID is not configured
+    if (!appId) {
+      return;
+    }
 
     import('react-onesignal')
       .then((module) => {
         if (!isMounted) return;
         const OneSignal = module.default;
 
-        OneSignal.init({
+        const initOptions: Record<string, unknown> = {
           appId,
-          safari_web_id: 'web.onesignal.auto.040fbea3-5bf4-4f81-a6ad-042d48246d00',
           notifyButton: {
             enable: true,
-          } as any,
-          allowLocalhostAsSecureOrigin: true,
-        })
+          },
+          allowLocalhostAsSecureOrigin: process.env.NODE_ENV !== 'production',
+        };
+
+        if (process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID) {
+          initOptions.safari_web_id = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID;
+        }
+
+        OneSignal.init(initOptions as never)
           .then(() => {
             if (!isMounted) return;
-            const os = OneSignal as any;
+            const os = OneSignal as unknown as {
+              login?: (id: string) => void;
+              setExternalUserId?: (id: string) => void;
+            };
             if (typeof os.login === 'function') {
               os.login(userId);
             } else if (typeof os.setExternalUserId === 'function') {
               os.setExternalUserId(userId);
             }
           })
-          .catch(() => {});
+          .catch((err) => {
+            console.error('OneSignal initialization error:', err);
+          });
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('OneSignal module load error:', err);
+      });
 
     return () => {
       isMounted = false;

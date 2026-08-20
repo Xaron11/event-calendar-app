@@ -11,7 +11,6 @@ import {
   EventClickArg,
   EventContentArg,
 } from '@fullcalendar/core';
-import { dateWithoutTime } from '../utils/date';
 import { useState, useRef } from 'react';
 import Dialog from './Dialog';
 import DialogRef from './types/DialogRef';
@@ -22,7 +21,7 @@ export default function Calendar(props: {
   onEventAdd: (event: EventInput) => void;
   onEventDelete: (eventId: string) => void;
 }) {
-  const [currentEvents, setCurrentEvents] = useState<EventApi[]>();
+  const [, setCurrentEvents] = useState<EventApi[]>();
   const [lastSelection, setLastSelection] = useState<DateSelectArg>();
   const [lastEventClick, setLastEventClick] = useState<EventClickArg>();
   const [newEventTitle, setNewEventTitle] = useState<string>('');
@@ -31,6 +30,7 @@ export default function Calendar(props: {
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     setLastSelection(selectInfo);
+    setNewEventTitle('');
     createDialogRef.current?.openDialog();
   };
 
@@ -47,14 +47,14 @@ export default function Calendar(props: {
 
   const handleCreateDialogClose = (accept: boolean) => {
     if (accept && lastSelection) {
-      let calendarApi = lastSelection.view.calendar;
-
+      const calendarApi = lastSelection.view.calendar;
       calendarApi.unselect();
 
-      if (newEventTitle) {
+      const trimmedTitle = newEventTitle.trim();
+      if (trimmedTitle) {
         const newEvent = {
           id: uuidv4(),
-          title: newEventTitle,
+          title: trimmedTitle,
           start: lastSelection.startStr,
           end: lastSelection.endStr,
           allDay: lastSelection.allDay,
@@ -76,12 +76,10 @@ export default function Calendar(props: {
 
   function renderEventContent(eventInfo: EventContentArg) {
     return (
-      <>
-        <div className='p-1'>
-          <b className='text-sm'>{eventInfo.timeText}</b>{' '}
-          <i className='text-lg'>{eventInfo.event.title}</i>
-        </div>
-      </>
+      <div className='p-1 overflow-hidden text-ellipsis whitespace-nowrap'>
+        <b className='text-sm'>{eventInfo.timeText}</b>{' '}
+        <i className='text-md'>{eventInfo.event.title}</i>
+      </div>
     );
   }
 
@@ -130,7 +128,7 @@ export default function Calendar(props: {
         <input
           className='w-full rounded-md p-2 border-blue-950 shadow-blue-950 border-2'
           id='title'
-          defaultValue='New Event'
+          placeholder='New Event'
           value={newEventTitle}
           onChange={(e) => setNewEventTitle(e.target.value)}
         />
@@ -138,9 +136,9 @@ export default function Calendar(props: {
       <Dialog
         ref={deleteDialogRef}
         title='Delete Event'
-        desc={`Are you sure you want to delete the event '${lastEventClick?.event.title}'`}
+        desc={`Are you sure you want to delete the event '${lastEventClick?.event.title ?? ''}'?`}
         onClose={handleDeleteDialogClose}
-      ></Dialog>
+      />
     </>
   );
 }
